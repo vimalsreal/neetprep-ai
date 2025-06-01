@@ -189,10 +189,9 @@ export default function AnalyticsPage() {
       </div>
 
       <Tabs defaultValue="questions" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="questions">Question Bank</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
 
@@ -266,9 +265,6 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="users" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Top Performers</CardTitle>

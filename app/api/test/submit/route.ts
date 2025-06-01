@@ -7,7 +7,20 @@ export async function POST(request: NextRequest) {
     const { userId, subject, chapter, difficulty, answers, questions, timeTaken, classLevel } = await request.json()
 
     if (!userId || !subject || !chapter || !answers || !questions) {
+      console.error("[TEST SUBMIT] Missing required fields", { userId, subject, chapter, answers: !!answers, questions: !!questions })
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // Check user subscription status
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("subscription")
+      .eq("id", userId)
+      .single()
+
+    if (userError || !user || user.subscription !== "premium") {
+      console.warn("[TEST SUBMIT] Unauthorized access attempt by user ID:", userId)
+      return NextResponse.json({ error: "Access denied. Please subscribe to take tests." }, { status: 403 })
     }
 
     // Calculate score and accuracy

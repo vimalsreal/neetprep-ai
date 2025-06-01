@@ -6,8 +6,20 @@ export async function POST(request: NextRequest) {
   try {
     const { message, userId, context } = await request.json()
 
-    if (!message) {
-      return NextResponse.json({ error: "Message is required" }, { status: 400 })
+    if (!message || !userId) {
+      return NextResponse.json({ error: "Message and User ID are required" }, { status: 400 })
+    }
+
+    // Check user subscription status
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("subscription")
+      .eq("id", userId)
+      .single()
+
+    if (userError || !user || user.subscription !== "premium") {
+      console.warn("[AI CHAT] Unauthorized access attempt by user ID:", userId)
+      return NextResponse.json({ error: "Access denied. Please subscribe to use the AI Mentor." }, { status: 403 })
     }
 
     // Get user context if userId is provided

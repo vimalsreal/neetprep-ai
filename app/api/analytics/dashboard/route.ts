@@ -1,8 +1,29 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Get user ID from request (assuming authentication middleware provides it)
+    // This is a placeholder; actual implementation depends on auth setup
+    const userId = request.headers.get("x-user-id"); // Example: get user ID from a custom header
+
+    if (!userId) {
+       console.warn("[ANALYTICS] Unauthorized access attempt: Missing user ID")
+       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check user subscription status
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("subscription")
+      .eq("id", userId)
+      .single()
+
+    if (userError || !user || user.subscription !== "premium") {
+      console.warn("[ANALYTICS] Unauthorized access attempt by user ID:", userId)
+      return NextResponse.json({ error: "Access denied. Please subscribe to view analytics." }, { status: 403 })
+    }
+
     // Get total questions count
     const { count: totalQuestions } = await supabase.from("questions").select("*", { count: "exact", head: true })
 

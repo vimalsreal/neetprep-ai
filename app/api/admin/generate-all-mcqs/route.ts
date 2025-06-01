@@ -4,7 +4,7 @@ import { geminiService } from "@/lib/gemini"
 import { supabase } from "@/lib/supabase"
 import { subjectsData } from "@/lib/subjects-data"
 
-export const maxDuration = 300 // 5 minutes
+export const maxDuration = 60 // 1 minute (Vercel Hobby plan limit)
 
 export async function POST(request: NextRequest) {
   try {

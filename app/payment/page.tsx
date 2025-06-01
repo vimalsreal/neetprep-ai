@@ -11,44 +11,66 @@ import { useToast } from "@/components/ui/use-toast"
 
 export default function Payment() {
   const [isProcessing, setIsProcessing] = useState(false)
+  const [email, setEmail] = useState("")
+  const [isChecking, setIsChecking] = useState(false)
+  const [isExistingUser, setIsExistingUser] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
-  const handlePayment = async () => {
-    setIsProcessing(true)
+  // Check if user exists before payment
+  const checkUserExists = async (emailToCheck: string) => {
+    setIsChecking(true)
+    try {
+      const response = await fetch("/api/auth/check-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailToCheck }),
+      })
+      const data = await response.json()
+      setIsExistingUser(data.exists)
+      return data.exists
+    } catch {
+      setIsExistingUser(false)
+      return false
+    } finally {
+      setIsChecking(false)
+    }
+  }
 
+  const handlePayment = async () => {
+    if (!email) {
+      toast({ title: "Email Required", description: "Please enter your email before payment.", variant: "destructive" })
+      return
+    }
+    setIsProcessing(true)
+    // Check if user already exists
+    const exists = await checkUserExists(email)
+    if (exists) {
+      toast({ title: "Account Exists", description: "This email is already registered. Please log in instead.", variant: "destructive" })
+      setIsProcessing(false)
+      return
+    }
     try {
       // Create payment session
       const response = await fetch("/api/payment/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: "user@example.com", // Replace with actual user email from auth
-          name: "Student Name", // Replace with actual user name
-          phone: "9999999999", // Replace with actual user phone
+          email,
+          name: "Student Name",
+          phone: "9999999999",
         }),
       })
-
       const data = await response.json()
-
       if (data.success) {
-        toast({
-          title: "Payment Session Created",
-          description: "Redirecting to payment gateway...",
-        })
-
-        // Redirect to payment URL (demo or actual Cashfree)
+        toast({ title: "Payment Session Created", description: "Redirecting to payment gateway..." })
         window.location.href = data.paymentUrl
       } else {
         throw new Error(data.error || "Failed to create payment session")
       }
     } catch (error) {
       console.error("Payment error:", error)
-      toast({
-        title: "Payment Error",
-        description: error instanceof Error ? error.message : "Failed to process payment",
-        variant: "destructive",
-      })
+      toast({ title: "Payment Error", description: error instanceof Error ? error.message : "Failed to process payment", variant: "destructive" })
     } finally {
       setIsProcessing(false)
     }
@@ -83,6 +105,24 @@ export default function Payment() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Email</label>
+                  <input
+                    type="email"
+                    className="w-full border rounded p-2"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={async (e) => {
+                      setEmail(e.target.value)
+                      if (e.target.value) await checkUserExists(e.target.value)
+                    }}
+                    required
+                    disabled={isProcessing}
+                  />
+                  {isChecking && <span className="text-xs text-gray-500">Checking...</span>}
+                  {isExistingUser && <span className="text-xs text-red-600">This email is already registered. Please log in.</span>}
+                </div>
+
                 <div className="flex justify-between items-center border-b border-gray-100 pb-4">
                   <div>
                     <h3 className="font-medium">ExamGPT Premium</h3>
